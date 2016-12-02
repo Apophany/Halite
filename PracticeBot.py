@@ -1,7 +1,7 @@
 from game_files.networking import *
 
 myID, gameMap = getInit()
-sendInit("MyPythonBot")
+sendInit("PracticeBot")
 
 while True:
     moves = []
