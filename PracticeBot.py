@@ -3,6 +3,27 @@ from game_files.networking import *
 myID, gameMap = getInit()
 sendInit("PracticeBot")
 
+
+def move(location):
+    site = gameMap.getSite(location)
+
+    border = False
+    for d in CARDINALS:
+        neighbour_site = gameMap.getSite(location, d)
+        if not neighbour_site.owner == myID:
+            border = True
+            if neighbour_site.strength < site.strength:
+                return Move(location, d)
+
+    if site.strength < site.production * 5:
+        return Move(location, STILL)
+
+    if not border:
+        return Move(location, NORTH if random.random() > 0.5 else WEST)
+
+    return Move(location, STILL)
+
+
 while True:
     moves = []
     gameMap = getFrame()
@@ -10,5 +31,5 @@ while True:
         for x in range(gameMap.width):
             location = Location(x, y)
             if gameMap.getSite(location).owner == myID:
-                moves.append(Move(location, random.choice(DIRECTIONS)))
+                moves.append(move(location))
     sendFrame(moves)

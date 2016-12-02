@@ -14,7 +14,7 @@ def find_nearest_enemy(location):
 
         current_site = gameMap.getSite(current_location, d)
 
-        while current_site.owner == id and distance < max_distance:
+        while current_site.owner == myID and distance < max_distance:
             distance += 1
             current_location = gameMap.getLocation(current_location, d)
             current_site = gameMap.getSite(current_location)
