@@ -1,9 +1,12 @@
-from game_files.networking import *
+from game_files.debug.networking import *
+from utils import timer
 
 myID, gameMap = getInit()
+timer.setup(myID)
 sendInit("TheConnor")
 
 
+#@timer.timeit
 def find_nearest_enemy(location):
     direction = NORTH
     max_distance = min(gameMap.width, gameMap.height) / 2
@@ -41,7 +44,10 @@ def move(location):
         return Move(location, STILL)
 
     if not border:
-        return Move(location, find_nearest_enemy(location))
+        try:
+            return Move(location, find_nearest_enemy(location))
+        except Exception as e:
+            print(e)
 
     return Move(location, STILL)
 
