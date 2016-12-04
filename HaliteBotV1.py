@@ -1,12 +1,31 @@
-from game_files.debug.networking import *
+from game_files.networking import *
 from utils import timer
+from utils.PriorityQueue import PriorityQueue
 
 myID, gameMap = getInit()
-timer.setup(myID)
+# timer.setup(myID)
 sendInit("TheConnor")
 
 
-#@timer.timeit
+def getDirection(location, closest_site):
+    pass
+
+
+def find_nearest_enemy_bfs(location):
+    direction = NORTH
+
+    p_queue = PriorityQueue(key=lambda loc: gameMap.getDistance(location, loc))
+    p_queue.push(location)
+
+    while not p_queue.empty():
+        closest_loc = p_queue.pop()
+        closest_site = gameMap.getSite(closest_loc)
+
+        if closest_site.owner != myID:
+            return getDirection(location, closest_site)
+
+
+# @timer.timeit
 def find_nearest_enemy(location):
     direction = NORTH
     max_distance = min(gameMap.width, gameMap.height) / 2
@@ -44,10 +63,7 @@ def move(location):
         return Move(location, STILL)
 
     if not border:
-        try:
-            return Move(location, find_nearest_enemy(location))
-        except Exception as e:
-            print(e)
+        return Move(location, find_nearest_enemy(location))
 
     return Move(location, STILL)
 
