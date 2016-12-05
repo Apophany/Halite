@@ -1,14 +1,15 @@
-from game_files.networking import *
-from utils import timer
+import math
+import game_files.hlt as hlt
+
+from game_files.hlt import NORTH, EAST, SOUTH, WEST, STILL, Move
 from utils.PriorityQueue import PriorityQueue
 
-myID, gameMap = getInit()
-# timer.setup(myID)
-sendInit("TheConnor")
+myID, game_map = hlt.get_init()
+hlt.send_init("TheConnor")
 
 
 def get_direction(l1, l2):
-    angle = gameMap.getAngle(l1, l2) * (180 / math.pi)
+    angle = game_map.getAngle(l1, l2) * (180 / math.pi)
     if angle < 0.0:
         angle += 360.0
 
@@ -23,50 +24,44 @@ def get_direction(l1, l2):
     return direction
 
 
-def find_nearest_enemy_bfs(start_loc):
+def find_nearest_enemy_bfs(start):
     direction = NORTH
 
-    explored = [[False for x in range(gameMap.width)] for y in range(gameMap.height)]
+    explored = [[False for x in range(game_map.width)] for y in range(game_map.height)]
 
-    p_queue = PriorityQueue(key=lambda loc: gameMap.getDistance(start_loc, loc))
+    p_queue = PriorityQueue(key=lambda square: game_map.get_distance(start, square))
 
-    p_queue.push(start_loc)
-    explored[start_loc.y][start_loc.x] = start_loc
+    p_queue.push(start)
+    explored[start.y][start.x] = start
 
     while not p_queue.empty():
         vertex = p_queue.pop()
 
-        current_loc = vertex.location
-        current_site = gameMap.getSite(current_loc)
+        current_square = vertex.square
 
-        if current_site.owner != myID:
-            return get_direction(start_loc, current_loc)
+        if current_square.owner != myID:
+            return get_direction(start, current_square)
 
-        for d in CARDINALS:
-            neighbour_loc = gameMap.getLocation(current_loc, d)
-
-            if not explored[neighbour_loc.y][neighbour_loc.x]:
-                explored[neighbour_loc.y][neighbour_loc.x] = True
-                p_queue.push(neighbour_loc)
+        for neighbour in game_map.neighbors(current_square):
+            if not explored[neighbour.y][neighbour.x]:
+                explored[neighbour.y][neighbour.x] = True
+                p_queue.push(neighbour)
 
     return direction
 
 
 # @timer.timeit
-def find_nearest_enemy(location):
+def find_nearest_enemy(square):
     direction = NORTH
-    max_distance = min(gameMap.width, gameMap.height) / 2
+    max_distance = min(game_map.width, game_map.height) / 2
 
-    for d in CARDINALS:
+    for d in (NORTH, EAST, SOUTH, WEST):
         distance = 0
-        current_location = location
+        current_square = square
 
-        current_site = gameMap.getSite(current_location, d)
-
-        while current_site.owner == myID and distance < max_distance:
+        while current_square.owner == myID and distance < max_distance:
             distance += 1
-            current_location = gameMap.getLocation(current_location, d)
-            current_site = gameMap.getSite(current_location)
+            current_square = game_map.get_target(current_square, d)
 
         if distance < max_distance:
             direction = d
@@ -75,32 +70,31 @@ def find_nearest_enemy(location):
     return direction
 
 
-def move(location):
-    site = gameMap.getSite(location)
+def get_move(square):
+    _, direction = next(
+        (
+            (neighbor.strength, direction)
+            for direction, neighbor
+            in enumerate(game_map.neighbors(square))
+            if neighbor.owner != myID
+            and neighbor.strength < square.strength
+        ),
+        (None, None)
+    )
 
-    border = False
-    for d in CARDINALS:
-        neighbour_site = gameMap.getSite(location, d)
-        if not neighbour_site.owner == myID:
-            border = True
-            if neighbour_site.strength < site.strength:
-                return Move(location, d)
+    if direction is not None:
+        return Move(square, direction)
+    elif square.strength < square.production * 5:
+        return Move(square, STILL)
 
-    if site.strength < site.production * 5:
-        return Move(location, STILL)
-
+    border = any(neighbor.owner != myID for neighbor in game_map.neighbors(square))
     if not border:
-        return Move(location, find_nearest_enemy_bfs(location))
-
-    return Move(location, STILL)
+        return Move(square, find_nearest_enemy_bfs(square))
+    else:
+        return Move(square, STILL)
 
 
 while True:
-    moves = []
-    gameMap = getFrame()
-    for y in range(gameMap.height):
-        for x in range(gameMap.width):
-            location = Location(x, y)
-            if gameMap.getSite(location).owner == myID:
-                moves.append(move(location))
-    sendFrame(moves)
+    game_map.get_frame()
+    moves = [get_move(square) for square in game_map if square.owner == myID]
+    hlt.send_frame(moves)

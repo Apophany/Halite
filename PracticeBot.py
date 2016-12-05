@@ -1,35 +1,55 @@
-from game_files.networking import *
+import game_files.hlt as hlt
 
-myID, gameMap = getInit()
-sendInit("PracticeBot")
+from game_files.hlt import NORTH, EAST, SOUTH, WEST, STILL, Move
+
+myID, game_map = hlt.get_init()
+hlt.send_init("PracticeBot")
 
 
-def move(location):
-    site = gameMap.getSite(location)
+def find_nearest_enemy(square):
+    direction = NORTH
+    max_distance = min(game_map.width, game_map.height) / 2
 
-    border = False
-    for d in CARDINALS:
-        neighbour_site = gameMap.getSite(location, d)
-        if not neighbour_site.owner == myID:
-            border = True
-            if neighbour_site.strength < site.strength:
-                return Move(location, d)
+    for d in (NORTH, EAST, SOUTH, WEST):
+        distance = 0
+        current_square = square
 
-    if site.strength < site.production * 5:
-        return Move(location, STILL)
+        while current_square.owner == myID and distance < max_distance:
+            distance += 1
+            current_square = game_map.get_target(current_square, d)
 
+        if distance < max_distance:
+            direction = d
+            max_distance = distance
+
+    return direction
+
+
+def get_move(square):
+    _, direction = next(
+        (
+            (neighbor.strength, direction)
+            for direction, neighbor
+            in enumerate(game_map.neighbors(square))
+            if neighbor.owner != myID
+            and neighbor.strength < square.strength
+        ),
+        (None, None)
+    )
+
+    if direction is not None:
+        return Move(square, direction)
+    elif square.strength < square.production * 5:
+        return Move(square, STILL)
+
+    border = any(neighbor.owner != myID for neighbor in game_map.neighbors(square))
     if not border:
-        return Move(location, NORTH if random.random() > 0.5 else WEST)
-
-    return Move(location, STILL)
+        return Move(square, find_nearest_enemy(square))
+    else:
+        return Move(square, STILL)
 
 
 while True:
-    moves = []
-    gameMap = getFrame()
-    for y in range(gameMap.height):
-        for x in range(gameMap.width):
-            location = Location(x, y)
-            if gameMap.getSite(location).owner == myID:
-                moves.append(move(location))
-    sendFrame(moves)
+    game_map.get_frame()
+    moves = [get_move(square) for square in game_map if square.owner == myID]
+    hlt.send_frame(moves)

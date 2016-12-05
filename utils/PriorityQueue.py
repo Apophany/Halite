@@ -27,8 +27,8 @@ class PriorityQueue(object):
 
 
 class LocationVertex(object):
-    def __init__(self, location, priority, vertex_count):
-        self.location = location
+    def __init__(self, square, priority, vertex_count):
+        self.square = square
         self.priority = priority
         self._vertex_count = vertex_count
 
@@ -38,4 +38,4 @@ class LocationVertex(object):
         return self.priority < other.priority
 
     def __str__(self):
-        return "[location:%s, priority:%d, vertex_count:%d]" % (self.location.__str__(), self.priority, self._vertex_count)
+        return "[square:%s, priority:%d, vertex_count:%d]" % (self.square.__str__(), self.priority, self._vertex_count)
