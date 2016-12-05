@@ -20,12 +20,18 @@ class Location:
         self.x = x
         self.y = y
 
+    def __str__(self):
+        return "[x:%d, y:%d]" % (self.x, self.y)
+
 
 class Site:
     def __init__(self, owner=0, strength=0, production=0):
         self.owner = owner
         self.strength = strength
         self.production = production
+
+    def __str__(self):
+        return "[owner:%s, strength:%d, production:%d]" % (self.owner, self.strength, self.production)
 
 
 class Move:

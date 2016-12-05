@@ -7,22 +7,49 @@ myID, gameMap = getInit()
 sendInit("TheConnor")
 
 
-def getDirection(location, closest_site):
-    pass
+def get_direction(l1, l2):
+    angle = gameMap.getAngle(l1, l2) * (180 / math.pi)
+    if angle < 0.0:
+        angle += 360.0
+
+    direction = EAST
+    if 45 < angle <= 135:
+        direction = SOUTH
+    elif 135 < angle <= 225:
+        direction = WEST
+    elif 225 < angle <= 315:
+        direction = NORTH
+
+    return direction
 
 
-def find_nearest_enemy_bfs(location):
+def find_nearest_enemy_bfs(start_loc):
     direction = NORTH
 
-    p_queue = PriorityQueue(key=lambda loc: gameMap.getDistance(location, loc))
-    p_queue.push(location)
+    explored = [[False for x in range(gameMap.width)] for y in range(gameMap.height)]
+
+    p_queue = PriorityQueue(key=lambda loc: gameMap.getDistance(start_loc, loc))
+
+    p_queue.push(start_loc)
+    explored[start_loc.y][start_loc.x] = start_loc
 
     while not p_queue.empty():
-        closest_loc = p_queue.pop()
-        closest_site = gameMap.getSite(closest_loc)
+        vertex = p_queue.pop()
 
-        if closest_site.owner != myID:
-            return getDirection(location, closest_site)
+        current_loc = vertex.location
+        current_site = gameMap.getSite(current_loc)
+
+        if current_site.owner != myID:
+            return get_direction(start_loc, current_loc)
+
+        for d in CARDINALS:
+            neighbour_loc = gameMap.getLocation(current_loc, d)
+
+            if not explored[neighbour_loc.y][neighbour_loc.x]:
+                explored[neighbour_loc.y][neighbour_loc.x] = True
+                p_queue.push(neighbour_loc)
+
+    return direction
 
 
 # @timer.timeit
@@ -63,7 +90,7 @@ def move(location):
         return Move(location, STILL)
 
     if not border:
-        return Move(location, find_nearest_enemy(location))
+        return Move(location, find_nearest_enemy_bfs(location))
 
     return Move(location, STILL)
 
