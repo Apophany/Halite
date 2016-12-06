@@ -1,7 +1,7 @@
 import math
-import game_files.hlt as hlt
+import hlt as hlt
 
-from game_files.hlt import NORTH, EAST, SOUTH, WEST, STILL, Move
+from hlt import NORTH, EAST, SOUTH, WEST, STILL, Move
 from utils.PriorityQueue import PriorityQueue
 
 myID, game_map = hlt.get_init()

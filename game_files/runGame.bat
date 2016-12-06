@@ -1,1 +1,1 @@
-.\halite.exe -t -d "30 30" "python ../HaliteBotV1.py" "python ../PracticeBot.py"
+.\halite.exe -d "50 50" "python ../AmbiturnerBot.py" "python ../BoundaryBot.py"

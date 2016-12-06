@@ -1,56 +1,11 @@
-import math
 import hlt as hlt
 
 from hlt import NORTH, EAST, SOUTH, WEST, STILL, Move
-from utils.PriorityQueue import PriorityQueue
 
 myID, game_map = hlt.get_init()
-hlt.send_init("TheConnor")
+hlt.send_init("ConnorBot")
 
 
-def get_direction(l1, l2):
-    angle = game_map.getAngle(l1, l2) * (180 / math.pi)
-    if angle < 0.0:
-        angle += 360.0
-
-    direction = EAST
-    if 45 < angle <= 135:
-        direction = SOUTH
-    elif 135 < angle <= 225:
-        direction = WEST
-    elif 225 < angle <= 315:
-        direction = NORTH
-
-    return direction
-
-
-def find_nearest_enemy_bfs(start):
-    direction = NORTH
-
-    explored = [[False for x in range(game_map.width)] for y in range(game_map.height)]
-
-    p_queue = PriorityQueue(key=lambda square: game_map.get_distance(start, square))
-
-    p_queue.push(start)
-    explored[start.y][start.x] = start
-
-    while not p_queue.empty():
-        vertex = p_queue.pop()
-
-        current_square = vertex.square
-
-        if current_square.owner != myID:
-            return get_direction(start, current_square)
-
-        for neighbour in game_map.neighbors(current_square):
-            if not explored[neighbour.y][neighbour.x]:
-                explored[neighbour.y][neighbour.x] = True
-                p_queue.push(neighbour)
-
-    return direction
-
-
-# @timer.timeit
 def find_nearest_enemy(square):
     direction = NORTH
     max_distance = min(game_map.width, game_map.height) / 2
@@ -89,7 +44,7 @@ def get_move(square):
 
     border = any(neighbor.owner != myID for neighbor in game_map.neighbors(square))
     if not border:
-        return Move(square, find_nearest_enemy_bfs(square))
+        return Move(square, find_nearest_enemy(square))
     else:
         return Move(square, STILL)
 

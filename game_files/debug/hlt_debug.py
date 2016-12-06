@@ -7,9 +7,10 @@ communicating with the Halite game environment.
 """
 
 import math
-import sys
 from collections import namedtuple
 from itertools import chain, zip_longest
+
+import socket
 
 
 def grouper(iterable, n, fillvalue=None):
@@ -75,7 +76,8 @@ class GameMap:
         assert isinstance(include_self, bool)
         assert isinstance(n, int) and n > 0
         if n == 1:
-            combos = ((0, -1), (1, 0), (0, 1), (-1, 0), (0,0))  # NORTH, EAST, SOUTH, WEST, STILL ... matches indices provided by enumerate(game_map.neighbors(square))
+            combos = ((0, -1), (1, 0), (0, 1), (-1, 0), (0,
+                                                         0))  # NORTH, EAST, SOUTH, WEST, STILL ... matches indices provided by enumerate(game_map.neighbors(square))
         else:
             combos = ((dx, dy) for dy in range(-n, n + 1) for dx in range(-n, n + 1) if abs(dx) + abs(dy) <= n)
         return (self.contents[(square.y + dy) % self.height][(square.x + dx) % self.width] for dx, dy in combos if
@@ -109,19 +111,38 @@ class GameMap:
 
 
 ###############################################################
-# Functions for communicating with the Halite game environment#
+# DEBUG Functions for communicating with the Halite game environment#
 ###############################################################
+
+_connection = None
+
+
 def send_string(s):
-    sys.stdout.write(s)
-    sys.stdout.write('\n')
-    sys.stdout.flush()
+    global _connection
+    s += '\n'
+    _connection.sendall(bytes(s, 'ascii'))
 
 
 def get_string():
-    return sys.stdin.readline().rstrip('\n')
+    global _connection
+    newString = ""
+    buffer = '\0'
+    while True:
+        buffer = _connection.recv(1).decode('ascii')
+        if buffer != '\n':
+            newString += str(buffer)
+        else:
+            return newString
 
 
 def get_init():
+    # Connect to environment.
+    global _connection
+    _connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    port = int(input('Enter the port on which to connect: '))
+    _connection.connect(('localhost', port))
+    print('Connected to intermediary on port #' + str(port))
+
     playerID = int(get_string())
     m = GameMap(get_string(), get_string())
     return playerID, m

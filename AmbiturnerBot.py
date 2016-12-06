@@ -1,5 +1,4 @@
-import game_files.hlt as hlt
-
+from game_files import hlt
 from game_files.hlt import NORTH, EAST, SOUTH, WEST, STILL, Move
 
 myID, game_map = hlt.get_init()
